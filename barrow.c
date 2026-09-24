@@ -23,7 +23,7 @@
 #include <wlr/util/log.h>
 #include <xkbcommon/xkbcommon.h>
 
-struct surfing_server {
+struct barrow_server {
 	struct wl_display *display;
 	struct wlr_backend *backend;
 	struct wlr_scene *scene;
@@ -38,34 +38,29 @@ struct surfing_server {
 	struct wl_listener new_output;
 	struct wl_listener new_xdg_toplevel;
 	struct wl_listener new_xdg_popup;
-	struct wl_list outputs; // surfing_output::link
-	struct wl_list toplevels; // surfing_toplevel::link
+	struct wl_list outputs; // barrow_output::link
+	struct wl_list toplevels; // barrow_toplevel::link
 };
 
-struct surfing_toplevel {
+struct barrow_toplevel {
 	struct wl_list link;
 	struct wlr_xdg_toplevel *xdg_toplevel;
 	struct wlr_scene_tree *scene_tree;
 	struct wl_listener map;
 	struct wl_listener unmap;
 	struct wl_listener commit;
-	struct wl_listener destroy;
-	struct wl_listener request_move;
-	struct wl_listener request_resize;
-	struct wl_listener request_maximize;
-	struct wl_listener request_fullscreen;
 };
 
-struct surfing_output {
+struct barrow_output {
 	struct wlr_output *wlr_output;
 	struct wl_listener frame;
 	struct wl_list link;
 };
 
-struct surfing_server server;
+struct barrow_server server;
 
 void output_frame(struct wl_listener *listener, void *data) {
-	struct surfing_output *output = wl_container_of(listener, output, frame);
+	struct barrow_output *output = wl_container_of(listener, output, frame);
 	struct wlr_scene *scene = server.scene;
 
 	struct wlr_scene_output *scene_output = wlr_scene_get_scene_output(scene, output->wlr_output);
@@ -94,7 +89,7 @@ void server_new_output(struct wl_listener *listener, void *data) {
 	wlr_output_commit_state(wlr_output, &state);
 	wlr_output_state_finish(&state);
 
-	struct surfing_output *output = calloc(1, sizeof(*output));
+	struct barrow_output *output = calloc(1, sizeof(*output));
 	output->wlr_output = wlr_output;
 
 	output->frame.notify = output_frame;
@@ -108,19 +103,19 @@ void server_new_output(struct wl_listener *listener, void *data) {
 }
 
 void xdg_toplevel_map(struct wl_listener *listener, void *data) {
-	struct surfing_toplevel *toplevel = wl_container_of(listener, toplevel, map);
+	struct barrow_toplevel *toplevel = wl_container_of(listener, toplevel, map);
 
 	wl_list_insert(&server.toplevels, &toplevel->link);
 }
 
 void xdg_toplevel_unmap(struct wl_listener *listener, void *data) {
-	struct surfing_toplevel *toplevel = wl_container_of(listener, toplevel, unmap);
+	struct barrow_toplevel *toplevel = wl_container_of(listener, toplevel, unmap);
 
 	wl_list_remove(&toplevel->link);
 }
 
 void xdg_toplevel_commit(struct wl_listener *listener, void *data) {
-	struct surfing_toplevel *toplevel = wl_container_of(listener, toplevel, commit);
+	struct barrow_toplevel *toplevel = wl_container_of(listener, toplevel, commit);
 
 	if (toplevel->xdg_toplevel->base->initial_commit) {
 		wlr_xdg_toplevel_set_size(toplevel->xdg_toplevel, 0, 0);
@@ -130,7 +125,7 @@ void xdg_toplevel_commit(struct wl_listener *listener, void *data) {
 void server_new_xdg_toplevel(struct wl_listener *listener, void *data) {
 	struct wlr_xdg_toplevel *xdg_toplevel = data;
 
-	struct surfing_toplevel *toplevel = calloc(1, sizeof(*toplevel));
+	struct barrow_toplevel *toplevel = calloc(1, sizeof(*toplevel));
 	toplevel->xdg_toplevel = xdg_toplevel;
 	toplevel->scene_tree = wlr_scene_xdg_surface_create(&server.scene->tree, xdg_toplevel->base);
 	toplevel->scene_tree->node.data = toplevel;
